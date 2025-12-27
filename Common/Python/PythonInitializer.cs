@@ -75,22 +75,41 @@ namespace QuantConnect.Python
         /// </summary>
         public static void Shutdown()
         {
-            if (_isInitialized)
+//            if (_isInitialized)
+//            {
+//                Log.Trace($"PythonInitializer.Shutdown(): {Messages.PythonInitializer.Start}");
+//                _isInitialized = false;
+//
+//                try
+//                {
+//                    var pyLock = Py.GIL();
+//                    PythonEngine.Shutdown();
+//                }
+//                catch (Exception ex)
+//                {
+//                    Log.Error(ex);
+//                }
+//
+//                Log.Trace($"PythonInitializer.Shutdown(): {Messages.PythonInitializer.Ended}");
+//            }
+            try
             {
-                Log.Trace($"PythonInitializer.Shutdown(): {Messages.PythonInitializer.Start}");
-                _isInitialized = false;
-
-                try
+                if (!PythonEngine.IsInitialized)
                 {
-                    var pyLock = Py.GIL();
-                    PythonEngine.Shutdown();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex);
+                    return;
                 }
 
-                Log.Trace($"PythonInitializer.Shutdown(): {Messages.PythonInitializer.Ended}");
+                // IMPORTANT:
+                // In multi-threaded embedded scenarios (Lean + numpy/pandas),
+                // calling PythonEngine.Shutdown() can crash the process with GIL/thread-state errors.
+                // For batch backtesting, it is safer to skip shutdown and let the process exit.
+                return;
+
+                // PythonEngine.Shutdown(); // intentionally disabled
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
             }
         }
 
